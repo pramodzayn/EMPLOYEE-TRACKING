@@ -10,3 +10,7 @@ This project is a Flask-based application that tracks employee entry and exit ti
 2. Install dependencies:
    ```bash
    pip install -r requirements.txt
+   or python -m pip install -r requirements.txt 
+3. Run project
+   ```bash
+   python run.py
