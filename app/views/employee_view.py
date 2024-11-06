@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.services.employee_service import EmployeeService
 from app.services.face_recognition_service import FaceRecognitionService
 from app.repositories.employee_repository import EmployeeRepository
+import pickle
 
 employee_view = Blueprint('employee_view', __name__)
 
@@ -20,16 +21,18 @@ def get_entries_exits():
 
 @employee_view.route('/addEmployee', methods=['POST'])
 def add_employee():
-    data = request.json
-    name = data.get('name')
+    name = request.form.get('name')
+    image_file = request.files.get('image')
     if name is None:
         return jsonify({"status": "error", "message": "Employee name is required"}), 400
-    # Capture image from the webcam
     print(f'EmployeeName is : {name}')
-    image = FaceRecognitionService.capture_employee_image()
-    if image is None:
-        return jsonify({"error": "Failed to capture image"}), 500
-    print('Face image is captured')
-    EmployeeService.add_employee(name, image)
+    if image_file is None:
+        return jsonify({"status": "error", "message": "Image is required"}), 400
+
+    # Convert the uploaded image to a face encoding
+    face_encoding = FaceRecognitionService.encode_face(image_file)
+    # Serialize the face encoding for storage
+    face_encoding_binary = pickle.dumps(face_encoding)
+    EmployeeService.add_employee(name, face_encoding_binary)
     print('Saved successfully')
     return jsonify({"status": "success", "message": f"Employee {name} added successfully"})

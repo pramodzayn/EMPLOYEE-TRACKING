@@ -11,10 +11,10 @@ def scheduled_task(app):
         data = EmployeeService.get_daily_entries_exits()
         export_to_spreadsheet(data)
 
-def start_webcam_monitoring(app, cam_id):
+def start_webcam_monitoring(app, cam_id, cam_url):
     def webcam_capture():
         with app.app_context():
-            video_capture = cv2.VideoCapture(0) # Use the system's main webcam (camera index 0)
+            video_capture = cv2.VideoCapture(cam_url) # Use the system's main webcam (camera index 0)
             if not video_capture.isOpened():
                 print(f"Failed to open the webcam with cam_id {cam_id}.")
                 return
@@ -26,7 +26,7 @@ def start_webcam_monitoring(app, cam_id):
                     print(f"Failed to capture frame from the webcam {cam_id}")
                     break
 
-                print('captured the imahe ret is not null')
+                print('captured the image ret is not null')
                 # Process the frame using face recognition
                 FaceRecognitionService.process_camera_feed(frame, cam_id)
 
@@ -35,13 +35,21 @@ def start_webcam_monitoring(app, cam_id):
     capture_thread = threading.Thread(target=webcam_capture, daemon=True)
     capture_thread.start()
 
+def start_all_cameras(app, camera_urls):
+    for i, cam_url in enumerate(camera_urls, start=1):
+        cam_id = f"camera_{i}"
+        capture_thread = threading.Thread(target=start_webcam_monitoring, args=(app, cam_id, cam_url), daemon=True)
+        # daemon=True Ensures thread closes when main program exits
+        capture_thread.start()
+
 def init_scheduler(app):
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=lambda: scheduled_task(app), trigger='interval', hours=24)
     scheduler.start()
 
-    #camera_url = "http://your_camera_url"
-    cam_id = "local_cam"  # Unique identifier for each camera
-    capture_thread = threading.Thread(target=start_webcam_monitoring(app, cam_id), daemon=True)
-    #capture_thread.daemon = True  # Ensure thread closes when main program exits
-    capture_thread.start()
+    # use below code for testing through local system cam to detect the entry exit action
+    # cam_id = "local_cam"
+    # cam_url = 0
+    # capture_thread = threading.Thread(target=start_webcam_monitoring(app, cam_id, cam_url), daemon=True)
+    # #capture_thread.daemon = True  # Ensure thread closes when main program exits
+    # capture_thread.start()

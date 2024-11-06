@@ -2,7 +2,8 @@ from flask import Flask
 from app.config import Config
 from app.data_base import init_db
 from app.views.employee_view import employee_view
-from app.jobs.scheduler import init_scheduler
+from app.jobs.scheduler import init_scheduler, start_all_cameras
+from app.jobs.camera_urls import camera_urls
 
 def create_app():
     app = Flask(__name__)
@@ -16,5 +17,8 @@ def create_app():
 
     # Intialize the scheduler to trigger the job
     init_scheduler(app)
+
+    # Starting all cameras to detect
+    start_all_cameras(app, camera_urls)
 
     return app

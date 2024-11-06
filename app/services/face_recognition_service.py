@@ -69,26 +69,37 @@ class FaceRecognitionService:
         FaceRecognitionService.last_face_positions.setdefault(employee_id, {})[cam_id] = face_center_y
         return None
 
-    @staticmethod
-    def capture_employee_image():
-        video_capture = cv2.VideoCapture(0)
-        ret, frame = video_capture.read()
-        video_capture.release()
+    # use below function incase of adding new employee image in DB by capturing from local cam on hitting addEmployee endpoint
+    # @staticmethod
+    # def capture_employee_image():
+    #     video_capture = cv2.VideoCapture(0)
+    #     ret, frame = video_capture.read()
+    #     video_capture.release()
 
-        if not ret:
-            print("Failed to capture image")
-            return None
+    #     if not ret:
+    #         print("Failed to capture image")
+    #         return None
         
-        # Convert the captured frame to face encoding
-        rgb_frame = frame[:, :, ::-1]  # Convert BGR to RGB
-        face_encodings = face_recognition.face_encodings(rgb_frame)
-        if not face_encodings:
-            return jsonify({"error": "No face detected in captured image"}), 400
-        print('Face is detected and captured')
-        face_encoding = face_encodings[0]
-        print('Returning First element in face encodings')
-        #new_employee = EmployeeService.add_employee(name, face_encoding)
-        # Convert the frame to bytes for storage
-        #_, buffer = cv2.imencode('.jpg', frame)
-        #image_data = buffer.tobytes()
-        return face_encoding
+    #     # Convert the captured frame to face encoding
+    #     rgb_frame = frame[:, :, ::-1]  # Convert BGR to RGB
+    #     face_encodings = face_recognition.face_encodings(rgb_frame)
+    #     if not face_encodings:
+    #         return jsonify({"error": "No face detected in captured image"}), 400
+    #     print('Face is detected and captured')
+    #     face_encoding = face_encodings[0]
+    #     print('Returning First element in face encodings')
+    #     #new_employee = EmployeeService.add_employee(name, face_encoding)
+    #     # Convert the frame to bytes for storage
+    #     #_, buffer = cv2.imencode('.jpg', frame)
+    #     #image_data = buffer.tobytes()
+    #     return face_encoding
+
+    @staticmethod
+    def encode_face(image_file):
+        """Convert an uploaded image file into a face encoding."""
+        image = face_recognition.load_image_file(image_file)
+        face_encodings = face_recognition.face_encodings(image)
+        if face_encodings:
+            return face_encodings[0]  # Use the first face found
+        return None
+
