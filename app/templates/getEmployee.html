@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>GetEmployee</title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracking System - Dashboard</title>
+    <style>
+        /* General styling for the entire page */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            color: #f0f0f0; /* Bright text color */
+        }
+
+        /* Background styling */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://www.crmc.health/images/S-01.jpg');
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.3) blur(5px); /* Darkened and blurred background */
+            z-index: -1;
+        }
+
+        /* Header style */
+        header {
+            background-color: #004080;
+            color: #ffffff;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Logo on the header */
+        .logo img {
+            width: 120px;
+            position: absolute;
+            left: 10px;
+            top: 5px;
+        }
+
+        /* Container for the content */
+        .container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 1s ease-in;
+            z-index: 1;
+        }
+
+        /* Card for user information */
+        .user-info-card {
+            background-color: #004080; /* Solid background for user info */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 60%;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #f0f0f0; /* Bright text color */
+            animation: slideIn 1s ease-in-out;
+        }
+
+        /* User Info Title */
+        .user-info-card h2 {
+            color: #ADD8E6;
+            margin-bottom: 10px;
+        }
+
+        /* User Info List */
+        .user-info {
+            text-align: left;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        /* Download button */
+        .download-btn {
+            background-color: #000202 ; 
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            animation: pulse 1.5s infinite;
+        }
+     ############## 
+      @keyframes
+      from {opacity : 0}
+      to {opacity : 1}
+
+        .download-btn:hover {
+            background-color: #ADD8E6;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Footer section */
+        footer {
+            background-color: #004080;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Styling for table */
+        .timestamps {
+            margin-top: 20px;
+            width: 80%;
+            border-collapse: collapse;
+            text-align: left;
+            color: #f0f0f0; /* Bright text for table content */
+        }
+
+        .timestamps th, .timestamps td {
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+
+        .timestamps th {
+            background-color: #004080;
+            color: white;
+        }
+
+        .timestamps td {
+            background-color: rgba(255, 255, 255, 0.1); /* Dimmer background for table rows */
+        }
+
+        /* Animation for table entry */
+        .timestamps tbody tr {
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="background"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <img src="https://www.crmc.health/images/Carrollton-LoGo.png" alt="CRMC Logo">
+        </div>
+        Attendance Tracking System - Dashboard
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+
+        <!-- User Info Section -->
+        <div class="user-info-card">
+            <h2>User Information</h2>
+            <div class="user-info">
+                <p><strong>Name:</strong> Brandon Bartholomew</p>
+                <p><strong>Role:</strong> System Administrator</p>
+                <p><strong>Email:</strong> brandon.dasari-a@crmc.health</p>
+                <p><strong>Last Login:</strong> October 8, 2024</p>
+            </div>
+        </div>
+
+        <!-- Timestamps Section -->
+        <h2 style="color: #ADD8E6;">Facial Recognition Timestamps</h2>
+        <table class="timestamps">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>October 8, 2024</td>
+                    <td>08:00 AM</td>
+                    <td>05:00 PM</td>
+                </tr>
+                <tr>
+                    <td>October 7, 2024</td>
+                    <td>08:10 AM</td>
+                    <td>05:05 PM</td>
+                </tr>
+                <!-- More rows as needed -->
+            </tbody>
+        </table>
+
+        <!-- Download Excel Section -->
+        <button class="download-btn" onclick="downloadExcel()">Download Attendance Excel</button>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        © 2024 Carrollton Regional Medical Center. All rights reserved.
+    </footer>
+
+    <script>
+        // Function to simulate Excel download
+        function downloadExcel() {
+            alert("Excel file will be generated here.");
+            // You can integrate Python backend for actual file generation
+        }
+    </script>
+
+</body>
+</html>
+<!-- partial -->
+  
+</body>
+</html>

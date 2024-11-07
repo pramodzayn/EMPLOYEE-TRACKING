@@ -6,6 +6,7 @@ import cv2
 import threading
 from app.jobs.camera_urls import camera_urls
 from app.services.ffmpeg_utils import capture_frame_from_url
+import time
 
 def scheduled_task(app):
     with app.app_context():
@@ -16,19 +17,27 @@ def start_webcam_monitoring(app, cam_id, cam_url):
     def webcam_capture():
         with app.app_context():
             video_capture = cv2.VideoCapture(cam_url) # Use the system's main webcam (camera index 0)
-            if not video_capture.isOpened():
-                print(f"Failed to open the webcam with cam_id {cam_id}.")
-                return
-            print(f'capturing in the cam {cam_url}')
-            while video_capture.isOpened():
-                print(f'Video capture is opened in cam {cam_url}')
+            retry_attempts = 3  # Number of retry attempts
+            retry_delay = 5  # Seconds to wait before retrying
+            while True:
+                if not video_capture.isOpened():
+                    for attempt in range(retry_attempts):
+                        print(f"Retry {attempt + 1} for {cam_id}:{cam_url}.")
+                        video_capture.open(cam_url)
+                        time.sleep(retry_delay)
+                        if video_capture.isOpened():
+                            print(f"Connection re-established for {cam_id}:{cam_url}.")
+                            break
+                    else:
+                        print(f"Failed to reconnect to {cam_id}:{cam_url}. Skipping...")
+                        return
+                print(f"Connection established for {cam_id}:{cam_url}.")
                 ret, frame = video_capture.read()
                 if not ret:
-                    print(f"Failed to capture frame from the webcam {cam_id}")
-                    break
+                    print(f"Failed to capture frame from {cam_id}:{cam_url}. Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    continue
 
-                print(f'captured the image in cam {cam_url} ret is not null')
-                # Process the frame using face recognition
                 FaceRecognitionService.process_camera_feed(frame, cam_id)
 
             video_capture.release()
@@ -50,17 +59,18 @@ def process_camera_feed(app, cam_id, url):
     capture_thread.start()
 
 def start_all_cameras(app, camera_urls):
-    threads = []
+    # threads = []
     for i, cam_url in enumerate(camera_urls, start=1):
         cam_id = f"camera_{i}"
-        capture_thread = threading.Thread(target=start_webcam_monitoring, args=(app, cam_id, cam_url), daemon=True)
+        start_webcam_monitoring(app, cam_id, cam_url)
+        # capture_thread = threading.Thread(target=start_webcam_monitoring, args=(app, cam_id, cam_url), daemon=True)
         # daemon=True Ensures thread closes when main program exits
-        capture_thread.start()
-        threads.append(capture_thread)
+        # capture_thread.start()
+        # threads.append(capture_thread)
 
     # Ensure that the main thread waits for all camera threads to finish
-    for thread in threads:
-        thread.join()
+    # for thread in threads:
+    #     thread.join()
 
 def init_scheduler(app):
     scheduler = BackgroundScheduler()

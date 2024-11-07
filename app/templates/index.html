@@ -1,0 +1,59 @@
+<div style="max-width: 600px; margin: auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif;">
+    <h2 style="text-align: center;">Employee Details Form</h2>
+    <form id="employeeForm" onsubmit="submitForm(event)" style="display: flex; flex-direction: column;">
+        <label>First Name: <input type="text" name="firstName" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></label>
+        <label>Last Name: <input type="text" name="lastName" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></label>
+        <label>Phone Number: <input type="tel" name="phone" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></label>
+        <label>Email ID: <input type="email" name="email" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></label>
+        <label>Gender: 
+            <select name="gender" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </label>
+        <label>Upload Picture: <input type="file" name="picture" accept="image/*" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></label>
+        
+        <!-- Submit Button -->
+        <button type="submit" style="margin-top: 20px; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Submit</button>
+        
+        <!-- Logout Button -->
+        <button type="button" onclick="logout()" style="margin-top: 10px; padding: 10px; background-color: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Logout</button>
+    </form>
+  </div>
+  
+  <script>
+  async function submitForm(event) {
+    event.preventDefault();
+    const form = document.getElementById('employeeForm');
+    const formData = new FormData(form);
+    const employeeData = {
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        phone: formData.get('phone'),
+        email: formData.get('email'),
+        gender: formData.get('gender'),
+        EMPID: formData.get('EMPID'),
+        accessLevels: formData.getAll('accessLevel')
+    };
+    const pictureFile = formData.get('picture');
+    console.log('Employee Data:', employeeData);
+    console.log('Picture File:', pictureFile);
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/addEmployee', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response;
+        alert('Employee is added successfully');
+        console.log('Result: Employee is added successfully')
+    } catch (error) {
+        console.error("Error:", error);
+    }
+  }
+  
+  function logout() {
+    alert('You have been logged out.');
+    // Add any additional logout functionality here, e.g., redirect to a login page.
+  }
+  </script>

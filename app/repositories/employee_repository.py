@@ -13,9 +13,9 @@ class EmployeeRepository:
         db.session.commit()
 
     @staticmethod
-    def get_employee_entry_exit_records(employee_id):
+    def get_employee_entry_exit_records(employee_name):
         print('In repo layer')
-        employees = EntryExit.query.filter_by(employee_id=employee_id).all()
+        employees = EntryExit.query.filter_by(employee_name=employee_name).all()
         employee_data = [employee.to_dict() for employee in employees]
         print('fetching Employee entry exit data in DB')
         return employee_data

@@ -9,3 +9,4 @@ pandas
 opencv-python-headless
 face-recognition
 ffmpeg-python
+flask-cors

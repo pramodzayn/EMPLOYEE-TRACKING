@@ -5,10 +5,12 @@ from app.views.employee_view import employee_view
 from app.jobs.scheduler import init_scheduler, start_all_cameras
 from app.jobs.camera_urls import camera_urls
 from threading import Thread
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    CORS(app)
 
     # Initialize database
     init_db(app)

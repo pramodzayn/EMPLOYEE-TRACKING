@@ -3,8 +3,8 @@ from app.repositories.employee_repository import EmployeeRepository
 
 class EmployeeService:
     @staticmethod
-    def get_employee_entry_exit_records(employee_id):
-        return EmployeeRepository.get_employee_entry_exit_records(employee_id)
+    def get_employee_entry_exit_records(employee_name):
+        return EmployeeRepository.get_employee_entry_exit_records(employee_name)
 
     @staticmethod
     def get_daily_entries_exits(date):
