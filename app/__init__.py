@@ -4,6 +4,7 @@ from app.data_base import init_db
 from app.views.employee_view import employee_view
 from app.jobs.scheduler import init_scheduler, start_all_cameras
 from app.jobs.camera_urls import camera_urls
+from threading import Thread
 
 def create_app():
     app = Flask(__name__)
@@ -18,7 +19,12 @@ def create_app():
     # Intialize the scheduler to trigger the job
     init_scheduler(app)
 
-    # Starting all cameras to detect
-    start_all_cameras(app, camera_urls)
+    # Start all cameras in a background thread
+    def start_camera_thread():
+        start_all_cameras(app, camera_urls)
+
+    camera_thread = Thread(target=start_camera_thread)
+    camera_thread.daemon = True  # Ensure the thread dies when the main program exits
+    camera_thread.start()
 
     return app

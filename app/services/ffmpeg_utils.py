@@ -16,5 +16,6 @@ def capture_frame_from_url(url, width=1280, height=720):
     process.wait()
 
     if in_bytes:
+        print('Returning data')
         return np.frombuffer(in_bytes, np.uint8).reshape([height, width, 3])
     return None

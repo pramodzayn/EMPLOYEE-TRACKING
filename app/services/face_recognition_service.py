@@ -14,7 +14,7 @@ class FaceRecognitionService:
 
     @staticmethod
     def process_camera_feed(frame, cam_id):
-        print('In processing camera feed')
+        print(f'In processing camera feed in cam ID: {cam_id}')
         rgb_frame = frame[:, :, ::-1]
         print('rgb framed')
         face_locations = face_recognition.face_locations(rgb_frame)
