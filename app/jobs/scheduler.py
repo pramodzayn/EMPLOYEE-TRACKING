@@ -45,7 +45,7 @@ def start_webcam_monitoring(app, cam_id, cam_url):
     capture_thread = threading.Thread(target=webcam_capture, daemon=True)
     capture_thread.start()
 
-def process_camera_feed(app, cam_id, url):
+def process_camera_feed(app, cam_id, cam_url):
     with app.app_context():
         while True:
             video_capture = cv2.VideoCapture(cam_url)
@@ -85,7 +85,7 @@ def start_all_cameras(app, camera_urls):
         cam_id = f"camera_{i}"
         #start_webcam_monitoring(app, cam_id, cam_url)
         capture_thread = threading.Thread(target=process_camera_feed, args=(app, cam_id, cam_url), daemon=True)
-        daemon=True Ensures thread closes when main program exits
+        daemon=True #Ensures thread closes when main program exits
         capture_thread.start()
         # threads.append(capture_thread)
 

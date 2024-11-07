@@ -15,26 +15,32 @@ class FaceRecognitionService:
     @staticmethod
     def process_camera_feed(frame, cam_id):
         print(f'In processing camera feed in cam ID: {cam_id}')
-        rgb_frame = frame[:, :, ::-1]
-        print('rgb framed')
-        face_locations = face_recognition.face_locations(rgb_frame)
-        print('located faces')
-        face_encodings = face_recognition.face_encodings(frame, face_locations)
-        print('encodings done')
+        if frame is None or frame.size == 0:
+            print(f"[Error] Empty frame for camera ID {cam_id}. Skipping processing.")
+            return  # Skip processing if the frame is empty
+        try:
+            rgb_frame = frame[:, :, ::-1]
+            print('rgb framed')
+            face_locations = face_recognition.face_locations(rgb_frame)
+            print('located faces')
+            face_encodings = face_recognition.face_encodings(frame, face_locations)
+            print('encodings done')
 
-        for i, face_encoding in enumerate(face_encodings):
-            print('making repo service call')
-            employee = EmployeeRepository.find_by_face_data(face_encoding)
-            print('fetched employee by face data from DB')
-            face_location = face_locations[i]
-            action = FaceRecognitionService.get_movement_action(face_location, cam_id, employee)
-            print(f'detected the action {action}')
-            if action == None:
-                action = 'No_movement'
-            if employee:
-                EmployeeRepository.add_entry_exit(employee.id, employee.empoyee_name, cam_id, action)
-            elif action is not None:
-                EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, 'entry')
+            for i, face_encoding in enumerate(face_encodings):
+                print('making repo service call')
+                employee = EmployeeRepository.find_by_face_data(face_encoding)
+                print('fetched employee by face data from DB')
+                face_location = face_locations[i]
+                action = FaceRecognitionService.get_movement_action(face_location, cam_id, employee)
+                print(f'detected the action {action}')
+                if action == None:
+                    action = 'No_movement'
+                if employee:
+                    EmployeeRepository.add_entry_exit(employee.id, employee.empoyee_name, cam_id, action)
+                elif action is not None:
+                    EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, 'entry')
+        except Exception as e:
+            print(f"[Error] Failed to process frame for camera ID {cam_id}: {e}")
 
     @staticmethod
     def get_movement_action(face_location, cam_id, employee):
