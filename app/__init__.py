@@ -2,7 +2,7 @@ from flask import Flask
 from app.config import Config
 from app.data_base import init_db
 from app.views.employee_view import employee_view
-from app.jobs.scheduler import init_scheduler, start_all_cameras
+from app.jobs.scheduler import init_scheduler, start_all_cameras, start_one_camera
 from app.jobs.camera_urls import camera_urls
 from threading import Thread
 from flask_cors import CORS
@@ -21,12 +21,13 @@ def create_app():
     # Intialize the scheduler to trigger the job
     init_scheduler(app)
 
+    start_one_camera(app, "rtsp://10.49.25.62:7447/eLIfgPrxgXex3reR")
     # Start all cameras in a background thread
-    def start_camera_thread():
-        start_all_cameras(app, camera_urls)
+    # def start_camera_thread():
+    #     start_all_cameras(app, camera_urls)
 
-    camera_thread = Thread(target=start_camera_thread)
-    camera_thread.daemon = True  # Ensure the thread dies when the main program exits
-    camera_thread.start()
+    # camera_thread = Thread(target=start_camera_thread)
+    # camera_thread.daemon = True  # Ensure the thread dies when the main program exits
+    # camera_thread.start()
 
     return app

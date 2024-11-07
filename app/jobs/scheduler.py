@@ -75,6 +75,10 @@ def process_camera_feed(app, cam_id, url):
             # Reconnect after a short delay
             time.sleep(5)
 
+def start_one_camera(app, cam_url):
+    cam_id = "cam_1"
+    process_camera_feed(app, cam_id, cam_url)
+
 def start_all_cameras(app, camera_urls):
     # threads = []
     for i, cam_url in enumerate(camera_urls, start=1):
