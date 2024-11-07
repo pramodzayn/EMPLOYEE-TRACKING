@@ -46,26 +46,43 @@ def start_webcam_monitoring(app, cam_id, cam_url):
     capture_thread.start()
 
 def process_camera_feed(app, cam_id, url):
-    def process_url_cam_capture():
-        with app.app_context():
-            while True:
-                frame = capture_frame_from_url(url)
-                if frame is None:
-                    print(f"Failed to capture frame from camera {cam_id}")
-                    break
-                print(f'captured the image frame in {cam_id} is not null')
-                FaceRecognitionService.process_camera_feed(frame, cam_id)
-    capture_thread = threading.Thread(target=process_url_cam_capture, daemon=True)
-    capture_thread.start()
+    with app.app_context():
+        while True:
+            video_capture = cv2.VideoCapture(cam_url)
+            if not video_capture.isOpened():
+                print(f"Failed to open camera with cam_id {cam_id}. Retrying...")
+                video_capture.release()
+                continue
+
+            print(f'Started monitoring camera: {cam_id} at {cam_url}')
+            try:
+                while video_capture.isOpened():
+                    ret, frame = video_capture.read()
+                    if not ret:
+                        print(f"Failed to capture frame from camera {cam_id}. Retrying...")
+                        break  # Exit loop and reconnect
+
+                    # Process the frame using face recognition
+                    FaceRecognitionService.process_camera_feed(frame, cam_id)
+                
+            except Exception as e:
+                print(f"Error processing camera {cam_id}: {e}")
+
+            finally:
+                video_capture.release()  # Ensure the camera is released
+                print(f"Stopped monitoring camera: {cam_id}. Retrying in 5 seconds...")
+            
+            # Reconnect after a short delay
+            time.sleep(5)
 
 def start_all_cameras(app, camera_urls):
     # threads = []
     for i, cam_url in enumerate(camera_urls, start=1):
         cam_id = f"camera_{i}"
-        start_webcam_monitoring(app, cam_id, cam_url)
-        # capture_thread = threading.Thread(target=start_webcam_monitoring, args=(app, cam_id, cam_url), daemon=True)
-        # daemon=True Ensures thread closes when main program exits
-        # capture_thread.start()
+        #start_webcam_monitoring(app, cam_id, cam_url)
+        capture_thread = threading.Thread(target=process_camera_feed, args=(app, cam_id, cam_url), daemon=True)
+        daemon=True Ensures thread closes when main program exits
+        capture_thread.start()
         # threads.append(capture_thread)
 
     # Ensure that the main thread waits for all camera threads to finish
