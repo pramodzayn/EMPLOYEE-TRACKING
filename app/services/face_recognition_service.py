@@ -18,10 +18,21 @@ class FaceRecognitionService:
         if frame is None or frame.size == 0:
             print(f"[Error] Empty frame for camera ID {cam_id}. Skipping processing.")
             return  # Skip processing if the frame is empty
+        print(f"[DEBUG] Frame received: {frame is not None}, frame size: {frame.size if frame is not None else 'None'}")
         try:
             rgb_frame = frame[:, :, ::-1]
             print('rgb framed')
+            # Check the size of the RGB frame to ensure it's not too small
+            if rgb_frame.shape[0] < 50 or rgb_frame.shape[1] < 50:
+                print(f"[Error] Frame size too small: {rgb_frame.shape}. Skipping frame.")
+                return
+                # rgb_frame = cv2.resize(rgb_frame, (640, 480))
+                # print(f'Frame Resized to {rgb_frame}')
+            print('rgb frame size accepted')
             face_locations = face_recognition.face_locations(rgb_frame)
+            if len(face_locations) == 0:
+                print(f"No faces detected in the frame.")
+                return        
             print('located faces')
             face_encodings = face_recognition.face_encodings(frame, face_locations)
             print('encodings done')
@@ -41,6 +52,8 @@ class FaceRecognitionService:
                     EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, 'entry')
         except Exception as e:
             print(f"[Error] Failed to process frame for camera ID {cam_id}: {e}")
+        finally:
+            print(f"Connection lost connection, aborting")
 
     @staticmethod
     def get_movement_action(face_location, cam_id, employee):
