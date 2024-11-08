@@ -29,6 +29,10 @@ class FaceRecognitionService:
                 # rgb_frame = cv2.resize(rgb_frame, (640, 480))
                 # print(f'Frame Resized to {rgb_frame}')
             print('rgb frame size accepted')
+            if rgb_frame.shape[0] > 640 or rgb_frame.shape[1] > 480:
+                print(f"resizing frame shape of {rgb_frame.shape}")
+                rgb_frame = cv2.resize(rgb_frame, (640, 480))
+                print("resize done")
             face_locations = face_recognition.face_locations(rgb_frame)
             if len(face_locations) == 0:
                 print(f"No faces detected in the frame.")
