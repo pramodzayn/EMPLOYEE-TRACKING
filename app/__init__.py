@@ -27,9 +27,9 @@ def create_app():
         # start_one_camera(app, "rtsp://10.49.25.62:7447/eLIfgPrxgXex3reR")
         start_all_cameras(app, camera_urls)
 
-    start_camera_thread()
-    # camera_thread = Thread(target=start_camera_thread)
-    # camera_thread.daemon = True  # Ensure the thread dies when the main program exits
-    # camera_thread.start()
+    # start_camera_thread()
+    camera_thread = Thread(target=start_camera_thread)
+    camera_thread.daemon = True  # Ensure the thread dies when the main program exits
+    camera_thread.start()
 
     return app

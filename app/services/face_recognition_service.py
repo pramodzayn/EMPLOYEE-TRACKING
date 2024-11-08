@@ -35,10 +35,13 @@ class FaceRecognitionService:
                 # rgb_frame = cv2.resize(rgb_frame, (640, 480))
                 # print(f'Frame Resized to {rgb_frame}')
             print('rgb frame size accepted')
-            if rgb_frame.shape[0] > 320 or rgb_frame.shape[1] > 240:
-                print(f"resizing frame shape of {rgb_frame.shape}")
-                rgb_frame = cv2.resize(rgb_frame, (320, 240))
-                print("resize done")
+            if rgb_frame.shape[0] > 720 or rgb_frame.shape[1] > 480:
+                if psutil.virtual_memory().percent < 75:
+                    print("Processing at high resolution for accuracy.")
+                else:
+                    print("Downscaling to manage resource usage.")
+                    rgb_frame = cv2.resize(rgb_frame, (640, 480))
+                    print('Resize done')
             face_locations = face_recognition.face_locations(rgb_frame)
             if len(face_locations) == 0:
                 print(f"No faces detected in the frame.")
