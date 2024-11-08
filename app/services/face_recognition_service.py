@@ -2,6 +2,8 @@ from app.repositories.employee_repository import EmployeeRepository
 from datetime import datetime, timedelta
 import face_recognition
 import cv2
+import psutil
+import gc
 
 class FaceRecognitionService:
     last_face_locations = {}
@@ -15,6 +17,10 @@ class FaceRecognitionService:
     @staticmethod
     def process_camera_feed(frame, cam_id):
         print(f'In processing camera feed in cam ID: {cam_id}')
+        # Monitor and log resource usage
+        memory_usage = psutil.virtual_memory().percent
+        cpu_usage = psutil.cpu_percent(interval=1)
+        print(f"[Resource Monitor] Memory Usage: {memory_usage}%, CPU Usage: {cpu_usage}%")
         if frame is None or frame.size == 0:
             print(f"[Error] Empty frame for camera ID {cam_id}. Skipping processing.")
             return  # Skip processing if the frame is empty
@@ -29,9 +35,9 @@ class FaceRecognitionService:
                 # rgb_frame = cv2.resize(rgb_frame, (640, 480))
                 # print(f'Frame Resized to {rgb_frame}')
             print('rgb frame size accepted')
-            if rgb_frame.shape[0] > 640 or rgb_frame.shape[1] > 480:
+            if rgb_frame.shape[0] > 320 or rgb_frame.shape[1] > 240:
                 print(f"resizing frame shape of {rgb_frame.shape}")
-                rgb_frame = cv2.resize(rgb_frame, (640, 480))
+                rgb_frame = cv2.resize(rgb_frame, (320, 240))
                 print("resize done")
             face_locations = face_recognition.face_locations(rgb_frame)
             if len(face_locations) == 0:
@@ -57,6 +63,7 @@ class FaceRecognitionService:
         except Exception as e:
             print(f"[Error] Failed to process frame for camera ID {cam_id}: {e}")
         finally:
+            gc.collect()
             print(f"Connection lost connection, aborting")
 
     @staticmethod
