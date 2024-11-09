@@ -2,6 +2,7 @@ from app.models.employee import Employee, EntryExit
 from app.data_base import db
 from datetime import date, timedelta, datetime
 import face_recognition
+import pickle
 
 class EmployeeRepository:
     @staticmethod
@@ -44,7 +45,13 @@ class EmployeeRepository:
         print(f'Fetched emplyees in DB {employees}')
         for employee in employees:
             print('Checking lits of employees fetched from DB')
-            if face_recognition.compare_faces([employee.face_data], face_encoding)[0]:
+            stored_face_encoding = pickle.loads(employee.face_data)
+            print('Deserialized data fetched from DB')
+            if stored_face_encoding is None:
+                    print(f"[Warning] Stored face encoding for employee {employee.id} is None. Skipping.")
+                    continue
+            if face_recognition.compare_faces([stored_face_encoding], face_encoding)[0]:
                 print('Employee matched')
                 return employee
+        print("No matching employee found.")
         return None

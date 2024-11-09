@@ -45,35 +45,54 @@ def start_webcam_monitoring(app, cam_id, cam_url):
     capture_thread = threading.Thread(target=webcam_capture, daemon=True)
     capture_thread.start()
 
+def initialize_camera(cam_url, cam_id):
+    """Initialize camera connection."""
+    video_capture = cv2.VideoCapture(cam_url)
+    if not video_capture.isOpened():
+        print(f"Failed to open camera with cam_id {cam_id}. Retrying...")
+        retry_attempts = 3
+        retry_delay = 5  # Seconds
+        for attempt in range(retry_attempts):
+            print(f"Retry {attempt + 1} for cam_id {cam_id}.")
+            video_capture.open(cam_url)
+            time.sleep(retry_delay)
+            if video_capture.isOpened():
+                print(f"Connection re-established for cam_id {cam_id}.")
+                break
+        else:
+            print(f"Failed to connect to cam_id {cam_id} after multiple attempts.")
+            return None
+    return video_capture
+
 def process_camera_feed(app, cam_id, cam_url):
-    with app.app_context():
-        while True:
-            video_capture = cv2.VideoCapture(cam_url)
-            if not video_capture.isOpened():
-                print(f"Failed to open camera with cam_id {cam_id}. Retrying...")
-                video_capture.release()
-                continue
+    with app.app_context():  
+        video_capture = initialize_camera(cam_url, cam_id)
+        if video_capture is None:
+            print("Exiting process due to camera initialization failure.")
+            return
 
-            print(f'Started monitoring camera: {cam_id} at {cam_url}')
-            try:
-                while video_capture.isOpened():
-                    ret, frame = video_capture.read()
-                    if not ret:
-                        print(f"Failed to capture frame from camera {cam_id}. Retrying...")
-                        break  # Exit loop and reconnect
+        print(f'Started monitoring camera: {cam_id} at {cam_url}')
+        try:
+            while True:
+                print(f'Attempting to read camera: {cam_id} at {cam_url}')
+                ret, frame = video_capture.read()
+                print(f'Done frame capture reed for camera: {cam_id} at {cam_url}')
+                if not ret:
+                    print(f"Failed to capture frame from camera {cam_id}. Retrying...")
+                    continue  # Exit loop and reconnect
 
-                    # Process the frame using face recognition
-                    FaceRecognitionService.process_camera_feed(frame, cam_id)
-                
-            except Exception as e:
-                print(f"Error processing camera {cam_id}: {e}")
-
-            finally:
-                video_capture.release()  # Ensure the camera is released
-                print(f"Stopped monitoring camera: {cam_id}. Retrying in 5 seconds...")
+                # Process the frame using face recognition
+                FaceRecognitionService.process_camera_feed(frame, cam_id)
             
-            # Reconnect after a short delay
-            time.sleep(5)
+        except Exception as e:
+            print(f"Error processing camera {cam_id}: {e}")
+
+        finally:
+            video_capture.release()  # Ensure the camera is released
+            print(f"Stopped monitoring camera: {cam_id}. Retrying in 5 seconds...")
+        
+        # Reconnect after a short delay
+        time.sleep(5)
 
 def start_one_camera(app, cam_url):
     cam_id = "cam_1"
