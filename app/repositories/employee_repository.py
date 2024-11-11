@@ -3,12 +3,13 @@ from app.data_base import db
 from datetime import date, timedelta, datetime
 import face_recognition
 import pickle
+import pytz
 
 class EmployeeRepository:
     @staticmethod
     def add_employee(name, face_data):
         print('In repo layer')
-        employee = Employee(empoyee_name=name, face_data=face_data)
+        employee = Employee(employee_name=name, face_data=face_data)
         print('Inserting Employee data in DB')
         db.session.add(employee)
         db.session.commit()
@@ -23,7 +24,9 @@ class EmployeeRepository:
 
     @staticmethod
     def add_entry_exit(employee_id, employee_name, cam_id, action):
-        entry_exit = EntryExit(employee_id=employee_id, employee_name=employee_name, cam_id=cam_id, action=action)
+        central = pytz.timezone('America/Chicago')
+        central_time = datetime.now(central)
+        entry_exit = EntryExit(employee_id=employee_id, employee_name=employee_name, timestamp=central_time, cam_id=cam_id, action=action)
         db.session.add(entry_exit)
         db.session.commit()
 

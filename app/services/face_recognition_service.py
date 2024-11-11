@@ -61,9 +61,9 @@ class FaceRecognitionService:
                     if action == None:
                         action = 'No_movement'
                     if employee:
-                        EmployeeRepository.add_entry_exit(employee.id, employee.empoyee_name, cam_id, action)
+                        EmployeeRepository.add_entry_exit(employee.id, employee.employee_name, cam_id, action)
                     elif action is not None:
-                        EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, 'entry')
+                        EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, action)
             except Exception as e:
                 print(f"[Error] Failed to process frame for camera ID {cam_id}: {e}")
             finally:

@@ -11,3 +11,4 @@ face-recognition
 ffmpeg-python
 flask-cors
 psutil
+pytz

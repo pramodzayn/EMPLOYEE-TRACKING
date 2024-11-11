@@ -7,10 +7,11 @@ import threading
 from app.jobs.camera_urls import camera_urls
 from app.services.ffmpeg_utils import capture_frame_from_url
 import time
+from datetime import date
 
 def scheduled_task(app):
     with app.app_context():
-        data = EmployeeService.get_daily_entries_exits()
+        data = EmployeeService.get_daily_entries_exits(date.today())
         export_to_spreadsheet(data)
 
 def start_webcam_monitoring(app, cam_id, cam_url):
