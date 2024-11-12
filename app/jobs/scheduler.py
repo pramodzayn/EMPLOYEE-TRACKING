@@ -8,43 +8,14 @@ from app.jobs.camera_urls import camera_urls
 from app.services.ffmpeg_utils import capture_frame_from_url
 import time
 from datetime import date
+import imageio
+import numpy as np
+import face_recognition
 
 def scheduled_task(app):
     with app.app_context():
         data = EmployeeService.get_daily_entries_exits(date.today())
         export_to_spreadsheet(data)
-
-def start_webcam_monitoring(app, cam_id, cam_url):
-    def webcam_capture():
-        with app.app_context():
-            video_capture = cv2.VideoCapture(cam_url) # Use the system's main webcam (camera index 0)
-            retry_attempts = 3  # Number of retry attempts
-            retry_delay = 5  # Seconds to wait before retrying
-            while True:
-                if not video_capture.isOpened():
-                    for attempt in range(retry_attempts):
-                        print(f"Retry {attempt + 1} for {cam_id}:{cam_url}.")
-                        video_capture.open(cam_url)
-                        time.sleep(retry_delay)
-                        if video_capture.isOpened():
-                            print(f"Connection re-established for {cam_id}:{cam_url}.")
-                            break
-                    else:
-                        print(f"Failed to reconnect to {cam_id}:{cam_url}. Skipping...")
-                        return
-                print(f"Connection established for {cam_id}:{cam_url}.")
-                ret, frame = video_capture.read()
-                if not ret:
-                    print(f"Failed to capture frame from {cam_id}:{cam_url}. Retrying in {retry_delay} seconds...")
-                    time.sleep(retry_delay)
-                    continue
-
-                FaceRecognitionService.process_camera_feed(frame, cam_id)
-
-            video_capture.release()
-    # Start the webcam capture in a separate thread
-    capture_thread = threading.Thread(target=webcam_capture, daemon=True)
-    capture_thread.start()
 
 def initialize_camera(cam_url, cam_id):
     """Initialize camera connection."""
@@ -95,32 +66,53 @@ def process_camera_feed(app, cam_id, cam_url):
         # Reconnect after a short delay
         time.sleep(5)
 
-def start_one_camera(app, cam_url):
-    cam_id = "cam_1"
-    process_camera_feed(app, cam_id, cam_url)
+def process_rtsp_stream_with_ffmpeg(app, cam_id, rtsp_url):
+    with app.app_context():
+        reader =  None
+        try:
+            # Use imageio with FFmpeg to read the RTSP stream
+            reader = imageio.get_reader(rtsp_url, 'ffmpeg')
+            print(f'connected to {rtsp_url} with imageio ffmpeg')
+            while True:
+                try:
+                    # Grab the next frame from the stream
+                    frame = reader.get_next_data()  # Manually fetch the next frame
+                    print('Frame fetched')
+
+                    # Convert the frame to a numpy array for OpenCV compatibility
+                    frame = np.array(frame)
+                    print('converted frame to array')
+
+                    FaceRecognitionService.process_camera_feed(frame, cam_id)
+                    # # Detect faces in the frame
+                    # face_locations = face_recognition.face_locations(bgr_frame)
+
+                    # if face_locations:
+                    #     print(f"Detected {len(face_locations)} face(s) in the frame.")
+                    # else:
+                    #     print("No faces detected.")
+
+                except (IndexError, RuntimeError) as frame_error:
+                    # Handle frame retrieval errors
+                    print(f"Frame retrieval error: {frame_error}")
+                    break  # Break the loop if there's an issue with frame retrieval   
+        except Exception as e:
+            print(f'Failed in RTSP stream with imageio ffmpeh: {e}')
+        finally:
+            if reader is not None:
+                reader.close()
+                print("RTSP stream reader closed.")
+            else:
+                print("RTSP stream reader is Null")
 
 def start_all_cameras(app, camera_urls):
-    # threads = []
     for i, cam_url in enumerate(camera_urls, start=1):
         cam_id = f"camera_{i}"
-        #start_webcam_monitoring(app, cam_id, cam_url)
-        capture_thread = threading.Thread(target=process_camera_feed, args=(app, cam_id, cam_url), daemon=True)
+        capture_thread = threading.Thread(target=process_rtsp_stream_with_ffmpeg, args=(app, cam_id, cam_url), daemon=True)
         daemon=True #Ensures thread closes when main program exits
         capture_thread.start()
-        # threads.append(capture_thread)
-
-    # Ensure that the main thread waits for all camera threads to finish
-    # for thread in threads:
-    #     thread.join()
 
 def init_scheduler(app):
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=lambda: scheduled_task(app), trigger='interval', hours=24)
     scheduler.start()
-
-    # use below code for testing through local system cam to detect the entry exit action
-    # cam_id = "local_cam"
-    # cam_url = 0
-    # capture_thread = threading.Thread(target=start_webcam_monitoring(app, cam_id, cam_url), daemon=True)
-    # #capture_thread.daemon = True  # Ensure thread closes when main program exits
-    # capture_thread.start()

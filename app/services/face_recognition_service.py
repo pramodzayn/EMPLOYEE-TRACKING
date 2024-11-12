@@ -27,7 +27,8 @@ class FaceRecognitionService:
                 return  # Skip processing if the frame is empty
             print(f"[DEBUG] Frame received: {frame is not None}, frame size: {frame.size if frame is not None else 'None'}")
             try:
-                rgb_frame = frame[:, :, ::-1]
+                # rgb_frame = frame[:, :, ::-1]
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 print('rgb framed')
                 # Check the size of the RGB frame to ensure it's not too small
                 if rgb_frame.shape[0] < 50 or rgb_frame.shape[1] < 50:
@@ -102,31 +103,6 @@ class FaceRecognitionService:
         #First detection - initialize position tracking but don’t log an action yet
         FaceRecognitionService.last_face_positions.setdefault(employee_id, {})[cam_id] = face_center_y
         return None
-
-    # use below function incase of adding new employee image in DB by capturing from local cam on hitting addEmployee endpoint
-    # @staticmethod
-    # def capture_employee_image():
-    #     video_capture = cv2.VideoCapture(0)
-    #     ret, frame = video_capture.read()
-    #     video_capture.release()
-
-    #     if not ret:
-    #         print("Failed to capture image")
-    #         return None
-        
-    #     # Convert the captured frame to face encoding
-    #     rgb_frame = frame[:, :, ::-1]  # Convert BGR to RGB
-    #     face_encodings = face_recognition.face_encodings(rgb_frame)
-    #     if not face_encodings:
-    #         return jsonify({"error": "No face detected in captured image"}), 400
-    #     print('Face is detected and captured')
-    #     face_encoding = face_encodings[0]
-    #     print('Returning First element in face encodings')
-    #     #new_employee = EmployeeService.add_employee(name, face_encoding)
-    #     # Convert the frame to bytes for storage
-    #     #_, buffer = cv2.imencode('.jpg', frame)
-    #     #image_data = buffer.tobytes()
-    #     return face_encoding
 
     @staticmethod
     def encode_face(image_file):
