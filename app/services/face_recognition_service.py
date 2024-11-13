@@ -4,6 +4,8 @@ import face_recognition
 import cv2
 import psutil
 import gc
+from facenet_pytorch import MTCNN, InceptionResnetV1
+import torch
 
 class FaceRecognitionService:
     last_face_locations = {}
@@ -13,6 +15,9 @@ class FaceRecognitionService:
 
     ENTRY_EXIT_THRESHOLD = 50  # Pixels threshold to determine movement direction
     LOGGING_COOLDOWN = timedelta(seconds=3)  # Cooldown period to avoid excessive logging
+
+    mtcnn = MTCNN(keep_all=True, device='cuda' if torch.cuda.is_available() else 'cpu')
+    resnet = InceptionResnetV1(pretrained='vggface2').eval().to('cuda' if torch.cuda.is_available() else 'cpu')
 
     @staticmethod
     def process_camera_feed(frame, cam_id):
@@ -44,19 +49,32 @@ class FaceRecognitionService:
                         print("Downscaling to manage resource usage.")
                         rgb_frame = cv2.resize(rgb_frame, (640, 480))
                         print('Resize done')
-                face_locations = face_recognition.face_locations(rgb_frame)
-                if len(face_locations) == 0:
-                    print(f"No faces detected in the frame.")
-                    return        
-                print('located faces')
-                face_encodings = face_recognition.face_encodings(frame, face_locations)
-                print('encodings done')
+                faces, probs = FaceRecognitionService.mtcnn.detect(rgb_frame)
+                if faces is None:
+                    print("No faces detected in the frame.")
+                    return
+                faces = [face for face, prob in zip(faces, probs) if prob > 0.9]  # Filter based on detection confidence
 
-                for i, face_encoding in enumerate(face_encodings):
+                aligned_faces = []
+                for face in faces:
+                    x1, y1, x2, y2 = map(int, face)
+                    aligned_face = rgb_frame[y1:y2, x1:x2]
+                    aligned_faces.append(FaceRecognitionService.mtcnn.extract(aligned_face))
+
+                embeddings = [FaceRecognitionService.resnet(face.unsqueeze(0)) for face in aligned_faces]
+                # face_locations = face_recognition.face_locations(rgb_frame)
+                # if len(face_locations) == 0:
+                #     print(f"No faces detected in the frame.")
+                #     return        
+                # print('located faces')
+                # face_encodings = face_recognition.face_encodings(frame, face_locations)
+                # print('encodings done')
+
+                for i, embeddings in enumerate(face_encodings):
                     print('making repo service call')
-                    employee = EmployeeRepository.find_by_face_data(face_encoding)
+                    employee = EmployeeRepository.find_by_face_data(embedding.cpu().detach().numpy())
                     print('fetched employee by face data from DB')
-                    face_location = face_locations[i]
+                    face_location = faces[i]
                     action = FaceRecognitionService.get_movement_action(face_location, cam_id, employee)
                     print(f'detected the action {action}')
                     if action == None:
@@ -74,7 +92,7 @@ class FaceRecognitionService:
     @staticmethod
     def get_movement_action(face_location, cam_id, employee):
         employee_id = employee.id if employee else "unknown"
-        top, right, bottom, left = face_location
+        top, right, bottom, left = map(int, face_location)
         face_center_y = (top + bottom) // 2  # Using center y-coordinate as a proxy for distance
 
         # Retrieve the last known position and timestamp for the employee
@@ -107,9 +125,15 @@ class FaceRecognitionService:
     @staticmethod
     def encode_face(image_file):
         """Convert an uploaded image file into a face encoding."""
-        image = face_recognition.load_image_file(image_file)
-        face_encodings = face_recognition.face_encodings(image)
-        if face_encodings:
-            return face_encodings[0]  # Use the first face found
+        image = cv2.imread(image_file)
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        face, prob = FaceRecognitionService.mtcnn(rgb_image, return_prob=True)
+        if face is not None and prob > 0.9:
+            return FaceRecognitionService.resnet(face.unsqueeze(0)).detach().cpu().numpy()
         return None
+        # image = face_recognition.load_image_file(image_file)
+        # face_encodings = face_recognition.face_encodings(image)
+        # if face_encodings:
+        #     return face_encodings[0]  # Use the first face found
+        # return None
 

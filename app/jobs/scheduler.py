@@ -109,7 +109,7 @@ def process_rtsp_stream_with_ffmpeg(app, cam_id, rtsp_url, width=1280, height=72
 def start_all_cameras(app, camera_urls):
     for i, cam_url in enumerate(camera_urls, start=1):
         cam_id = f"camera_{i}"
-        capture_thread = threading.Thread(target=process_rtsp_stream_with_ffmpeg, args=(app, cam_id, cam_url), daemon=True)
+        capture_thread = threading.Thread(target=process_camera_feed, args=(app, cam_id, cam_url), daemon=True)
         daemon=True #Ensures thread closes when main program exits
         capture_thread.start()
 
