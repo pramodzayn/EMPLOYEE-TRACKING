@@ -11,6 +11,7 @@ from datetime import date
 import imageio
 import numpy as np
 import face_recognition
+import ffmpeg
 
 def scheduled_task(app):
     with app.app_context():
@@ -66,44 +67,44 @@ def process_camera_feed(app, cam_id, cam_url):
         # Reconnect after a short delay
         time.sleep(5)
 
-def process_rtsp_stream_with_ffmpeg(app, cam_id, rtsp_url):
+def process_rtsp_stream_with_ffmpeg(app, cam_id, rtsp_url, width=1280, height=720):
     with app.app_context():
-        reader =  None
         try:
-            # Use imageio with FFmpeg to read the RTSP stream
-            reader = imageio.get_reader(rtsp_url, 'ffmpeg')
-            print(f'connected to {rtsp_url} with imageio ffmpeg')
+            """Continuously captures frames from an RTSP stream and performs face detection."""
+            process = (
+                ffmpeg
+                .input(rtsp_url, rtsp_transport='tcp')  # Set RTSP transport to TCP for stability
+                .output('pipe:', format='rawvideo', pix_fmt='bgr24')
+                .run_async(pipe_stdout=True, pipe_stderr=True)
+            )
+            print('Processed rtsp url')
             while True:
-                try:
-                    # Grab the next frame from the stream
-                    frame = reader.get_next_data()  # Manually fetch the next frame
-                    print('Frame fetched')
+                print('Reading rtsp url')
+                in_bytes = process.stdout.read(width * height * 3)
+                print('Width and height adjusted')
+                if not in_bytes:
+                    print("No more frames or stream has ended.")
+                    break
 
-                    # Convert the frame to a numpy array for OpenCV compatibility
-                    frame = np.array(frame)
-                    print('converted frame to array')
+                # Convert bytes to a numpy array and reshape for OpenCV
+                frame = np.frombuffer(in_bytes, np.uint8).reshape([height, width, 3])
+                print('frame shapped')
+                FaceRecognitionService.process_camera_feed(frame, cam_id)
+                
+                # # Detect faces in the frame
+                # face_locations = face_recognition.face_locations(bgr_frame)
 
-                    FaceRecognitionService.process_camera_feed(frame, cam_id)
-                    # # Detect faces in the frame
-                    # face_locations = face_recognition.face_locations(bgr_frame)
-
-                    # if face_locations:
-                    #     print(f"Detected {len(face_locations)} face(s) in the frame.")
-                    # else:
-                    #     print("No faces detected.")
-
-                except (IndexError, RuntimeError) as frame_error:
-                    # Handle frame retrieval errors
-                    print(f"Frame retrieval error: {frame_error}")
-                    break  # Break the loop if there's an issue with frame retrieval   
+                # if face_locations:
+                #     print(f"Detected {len(face_locations)} face(s) in the frame.")
+                # else:
+                #     print("No faces detected.")
         except Exception as e:
-            print(f'Failed in RTSP stream with imageio ffmpeh: {e}')
+                print(f'Failed in RTSP stream with ffmpeh: {e}')
         finally:
-            if reader is not None:
-                reader.close()
-                print("RTSP stream reader closed.")
-            else:
-                print("RTSP stream reader is Null")
+            print("RTSP stream reader is Null")
+            process.stdout.close()
+            process.wait()
+            print("RTSP stream process closed.")
 
 def start_all_cameras(app, camera_urls):
     for i, cam_url in enumerate(camera_urls, start=1):
