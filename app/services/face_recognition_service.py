@@ -50,18 +50,22 @@ class FaceRecognitionService:
                         rgb_frame = cv2.resize(rgb_frame, (640, 480))
                         print('Resize done')
                 faces, probs = FaceRecognitionService.mtcnn.detect(rgb_frame)
-                if faces is None:
+                if faces is None or len(boxes) == 0:
                     print("No faces detected in the frame.")
                     return
+                print("Face detected")
                 faces = [face for face, prob in zip(faces, probs) if prob > 0.9]  # Filter based on detection confidence
 
                 aligned_faces = []
                 for face in faces:
                     x1, y1, x2, y2 = map(int, face)
                     aligned_face = rgb_frame[y1:y2, x1:x2]
-                    aligned_faces.append(FaceRecognitionService.mtcnn.extract(aligned_face))
+                    face_tensor = torch.tensor(aligned_face).permute(2, 0, 1).unsqueeze(0) / 255.0  # Convert to tensor and normalize
+                    encoding = FaceRecognitionService.resnet(face_tensor).detach().numpy().flatten()
+                    aligned_faces.append((encoding, face))
+                    #aligned_faces.append(FaceRecognitionService.mtcnn.extract(aligned_face))
 
-                embeddings = [FaceRecognitionService.resnet(face.unsqueeze(0)) for face in aligned_faces]
+                # embeddings = [FaceRecognitionService.resnet(face.unsqueeze(0)) for face in aligned_faces]
                 # face_locations = face_recognition.face_locations(rgb_frame)
                 # if len(face_locations) == 0:
                 #     print(f"No faces detected in the frame.")
@@ -69,20 +73,34 @@ class FaceRecognitionService:
                 # print('located faces')
                 # face_encodings = face_recognition.face_encodings(frame, face_locations)
                 # print('encodings done')
-
-                for i, embeddings in enumerate(face_encodings):
+                # Process each detected face and match with employees
+                for encoding, face_location in aligned_faces:
                     print('making repo service call')
-                    employee = EmployeeRepository.find_by_face_data(embedding.cpu().detach().numpy())
+                    employee = EmployeeRepository.find_by_face_data(encoding)
                     print('fetched employee by face data from DB')
-                    face_location = faces[i]
                     action = FaceRecognitionService.get_movement_action(face_location, cam_id, employee)
                     print(f'detected the action {action}')
-                    if action == None:
+                    if action is None:
                         action = 'No_movement'
+
                     if employee:
                         EmployeeRepository.add_entry_exit(employee.id, employee.employee_name, cam_id, action)
-                    elif action is not None:
+                    elif action:
                         EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, action)
+
+                # for i, embeddings in enumerate(face_encodings):
+                #     print('making repo service call')
+                #     employee = EmployeeRepository.find_by_face_data(embedding.cpu().detach().numpy())
+                #     print('fetched employee by face data from DB')
+                #     face_location = faces[i]
+                #     action = FaceRecognitionService.get_movement_action(face_location, cam_id, employee)
+                #     print(f'detected the action {action}')
+                #     if action == None:
+                #         action = 'No_movement'
+                #     if employee:
+                #         EmployeeRepository.add_entry_exit(employee.id, employee.employee_name, cam_id, action)
+                #     elif action is not None:
+                #         EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, action)
             except Exception as e:
                 print(f"[Error] Failed to process frame for camera ID {cam_id}: {e}")
             finally:

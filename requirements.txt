@@ -15,3 +15,5 @@ psutil
 pytz
 imageio
 imageio-ffmpeg
+facenet-pytorch
+torch
