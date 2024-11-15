@@ -4,6 +4,8 @@ from datetime import date, timedelta, datetime
 import face_recognition
 import pickle
 import pytz
+import numpy as np
+from scipy.spatial.distance import cosine
 
 class EmployeeRepository:
     @staticmethod
@@ -53,8 +55,21 @@ class EmployeeRepository:
             if stored_face_encoding is None:
                     print(f"[Warning] Stored face encoding for employee {employee.id} is None. Skipping.")
                     continue
-            if face_recognition.compare_faces([stored_face_encoding], face_encoding)[0]:
-                print('Employee matched')
+            if not isinstance(stored_face_encoding, np.ndarray):
+                stored_face_encoding = np.array(stored_face_encoding)
+            if not isinstance(face_encoding, np.ndarray):
+                face_encoding = np.array(face_encoding)
+            
+            # Calculate cosine similarity
+            similarity = 1 - cosine(stored_face_encoding, face_encoding)
+            print(f"Cosine similarity with employee {employee.id}: {similarity:.4f}")
+            
+            # Set a similarity threshold (e.g., 0.9)
+            if similarity > 0.9:
+                print('Employee matched!')
                 return employee
-        print("No matching employee found.")
+        #     if face_recognition.compare_faces([stored_face_encoding], face_encoding)[0]:
+        #         print('Employee matched')
+        #         return employee
+        # print("No matching employee found.")
         return None
