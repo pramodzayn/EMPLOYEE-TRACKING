@@ -16,7 +16,7 @@ class FaceRecognitionService:
     ENTRY_EXIT_THRESHOLD = 50  # Pixels threshold to determine movement direction
     LOGGING_COOLDOWN = timedelta(seconds=3)  # Cooldown period to avoid excessive logging
 
-    mtcnn = MTCNN(keep_all=True, device='cuda' if torch.cuda.is_available() else 'cpu')
+    mtcnn = MTCNN(keep_all=False, device='cuda' if torch.cuda.is_available() else 'cpu')
     resnet = InceptionResnetV1(pretrained='vggface2').eval().to('cuda' if torch.cuda.is_available() else 'cpu')
 
     @staticmethod
@@ -86,10 +86,13 @@ class FaceRecognitionService:
                     print(f'detected the action {action}')
                     if action == None:
                         action = 'No_movement'
+                    # Crop the detected face from the frame
+                    x1, y1, x2, y2 = map(int, faces[i])
+                    detected_face_frame = rgb_frame[y1:y2, x1:x2]
                     if employee:
-                        EmployeeRepository.add_entry_exit(employee.id, employee.employee_name, cam_id, action)
+                        EmployeeRepository.add_entry_exit(employee.id, employee.employee_name, cam_id, action, detected_face_frame)
                     elif action is not None:
-                        EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, action)
+                        EmployeeRepository.add_entry_exit(0, 'Unknown', cam_id, action, detected_face_frame)
             except Exception as e:
                 print(f"[Error] Failed to process frame for camera ID {cam_id}: {e}")
             finally:
@@ -138,30 +141,38 @@ class FaceRecognitionService:
             return None
         
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        faces, probs = FaceRecognitionService.mtcnn.detect(rgb_image)
+        faces, probs = FaceRecognitionService.mtcnn(rgb_image, return_prob=True)
+        if faces is not None and prob > 0.9:
+            # Generate embedding
+            embedding = FaceRecognitionService.resnet(faces.unsqueeze(0)).detach().cpu().numpy()
+            # Serialize the encoding
+            serialized_face_encoding = pickle.dumps(embedding)
+            return serialized_face_encoding
+        else:
+            print(f"[Error] No face detected in the image or confidence too low.")
         
-        if faces is None or len(faces) == 0:
-            print("[Error] No faces detected in the image.")
-            return None
+        # if faces is None or len(faces) == 0:
+        #     print("[Error] No faces detected in the image.")
+        #     return None
 
-        # Filter faces based on a confidence threshold (0.9 in this example)
-        high_conf_faces = [face for face, prob in zip(faces, probs) if prob > 0.9]
+        # # Filter faces based on a confidence threshold (0.9 in this example)
+        # high_conf_faces = [face for face, prob in zip(faces, probs) if prob > 0.9]
         
-        if not high_conf_faces:
-            print("[Error] No faces met the confidence threshold.")
-            return None
+        # if not high_conf_faces:
+        #     print("[Error] No faces met the confidence threshold.")
+        #     return None
         
-        # Using the first detected face
-        x1, y1, x2, y2 = map(int, high_conf_faces[0])
-        aligned_face = rgb_image[y1:y2, x1:x2]
-        aligned_face = cv2.resize(aligned_face, (160, 160))  # Resize to model input size
+        # # Using the first detected face
+        # x1, y1, x2, y2 = map(int, high_conf_faces[0])
+        # aligned_face = rgb_image[y1:y2, x1:x2]
+        # aligned_face = cv2.resize(aligned_face, (160, 160))  # Resize to model input size
 
-        # Convert to tensor and normalize for the model
-        aligned_face_tensor = torch.tensor(aligned_face).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-        if torch.cuda.is_available():
-            aligned_face_tensor = aligned_face_tensor.to('cuda')
+        # # Convert to tensor and normalize for the model
+        # aligned_face_tensor = torch.tensor(aligned_face).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+        # if torch.cuda.is_available():
+        #     aligned_face_tensor = aligned_face_tensor.to('cuda')
 
-        # Generate embedding using the model
-        face_encoding = FaceRecognitionService.resnet(aligned_face_tensor).detach().cpu().numpy()
+        # # Generate embedding using the model
+        # face_encoding = FaceRecognitionService.resnet(aligned_face_tensor).detach().cpu().numpy()
         
-        return face_encoding
+        # return face_encoding

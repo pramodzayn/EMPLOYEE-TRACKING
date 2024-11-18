@@ -16,6 +16,7 @@ class EntryExit(db.Model):
     action = db.Column(db.String(10), nullable=False)  # 'entry' or 'exit'
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
     employee_name = db.Column(db.String(50), nullable=True, default="Unknown")
+    frame_data = db.Column(db.LargeBinary, nullable=True)  
     employee = db.relationship('Employee', back_populates='entries_exits')
 
     def to_dict(self):
@@ -25,5 +26,6 @@ class EntryExit(db.Model):
             "timestamp": self.timestamp.isoformat(),
             "action": self.action,
             "employee_id": self.employee_id,
-            "employee_name": self.employee_name
+            "employee_name": self.employee_name,
+            "frame_data": self.frame_data
         }

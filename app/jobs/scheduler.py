@@ -15,8 +15,8 @@ import ffmpeg
 
 def scheduled_task(app):
     with app.app_context():
-        data = EmployeeService.get_daily_entries_exits(date.today())
-        export_to_spreadsheet(data)
+        EmployeeService.get_daily_entries_exits(date.today())
+        # export_to_spreadsheet(data)
 
 def initialize_camera(cam_url, cam_id):
     """Initialize camera connection."""
@@ -115,5 +115,5 @@ def start_all_cameras(app, camera_urls):
 
 def init_scheduler(app):
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=lambda: scheduled_task(app), trigger='interval', hours=24)
+    scheduler.add_job(func=lambda: scheduled_task(app), trigger='interval', minutes=1)
     scheduler.start()

@@ -8,7 +8,7 @@ class EmployeeService:
 
     @staticmethod
     def get_daily_entries_exits(date):
-        return EmployeeRepository.get_entries_exits_by_date(date)
+        EmployeeRepository.get_entries_exits_by_date(date)
 
     @staticmethod
     def add_employee(name, face_encoding):

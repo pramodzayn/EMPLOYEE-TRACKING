@@ -41,15 +41,15 @@ def add_employee():
         return jsonify({"status": "error", "message": "Image is required"}), 400
 
     # Convert the uploaded image to a face encoding
-    image = face_recognition.load_image_file(image_file)
-    face_encodings = face_recognition.face_encodings(image)
-    if face_encodings:
-        face_encoding = face_encodings[0]  # Use the first face found
-    else:
-        face_encoding = None
-    # face_encoding = FaceRecognitionService.encode_face(image_file)
+    # image = face_recognition.load_image_file(image_file)
+    # face_encodings = face_recognition.face_encodings(image)
+    # if face_encodings:
+    #     face_encoding = face_encodings[0]  # Use the first face found
+    # else:
+    #     face_encoding = None
+    face_encoding = FaceRecognitionService.encode_face(image_file)
     # Serialize the face encoding for storage
-    face_encoding_binary = pickle.dumps(face_encoding)
-    EmployeeService.add_employee(name, face_encoding_binary)
+    # face_encoding_binary = pickle.dumps(face_encoding)
+    EmployeeService.add_employee(name, face_encoding)
     print('Saved successfully')
     return jsonify({"status": "success", "message": f"Employee {name} added successfully"})
